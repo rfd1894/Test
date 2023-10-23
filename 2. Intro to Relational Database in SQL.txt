@@ -1,0 +1,158 @@
+Introduction to Relational Database
+_____________________ 1 _____________________
+
+	+ Thêm cột
+ALTER TABLE tên_bảng
+ADD cột kiểu_dữ liệu
+
+	+ Đổi tên cột
+ALTER TABLE tên_bảng
+RENAME tên_cũ TO tên_mới
+
+	+ Xóa cột
+ALTER TABLE tên_bảng
+DROP COLUMN tên_cột
+
+** tên_cột không cần để trong dấu ""
+
+_____________________ 2 _____________________
+
+	+ Ép kiểu dữ liệu
+SELECT temperature * CAST (wind_speed AS integer) AS wind_chill
+FROM weather
+
+	+ Đổi kiểu dữ liệu
+	// Trong postgres
+ALTER TABLE students
+ALTER COLUMN average_grade
+TYPE integer
+USING ROUND(average_grade)	// Làm tròn
+
+	// Trong MySQL
+ALTER TABLE students
+MODIFY average_grade INTEGER;
+
+_____________________ 3 _____________________
+
++ substring	// postgres
+-- Chuyển giá trị trong firstname tối đa 16
+ALTER TABLE professors 
+ALTER COLUMN firstname 
+TYPE varchar(16)
+USING SUBSTRING(firstname FROM 1 FOR 16)
+
+_____________________ 4 _____________________
+
+// Đặt THÊM điều kiện NOT NULL vào cột
+ALTER TABLE students
+ALTER COLUMN home_phone
+SET NOT NULL;
+
+// Bỏ điều kiện NOT NULL
+ALTER TABLE students
+ALTER COLUMN ssn DROP NOT NULL;
+
++ unique
+// Tạo điều kiện unique
+CREATE TABLE table_name (
+	column_name UNIQUE
+);
+
+// Thêm điều kiện unique
+ALTER TABLE table_name
+ADD CONSTRAINT some_name	//some_name là một tên mới bất kỳ
+UNIQUE(column_name);
+
+_____________________ 5 _____________________
+
+	+ Để chọn nhiều trường làm khóa chỉnh
+CREATE TABLE example(
+	a INT,
+	b INT,
+	c INT
+	PRIMARY KEY(Aa, c)
+);
+
+	+ 
+ALTER TABLE table_name
+ADD CONSTRAINT some_name PRIMARY KEY (column_name)
+
+_____________________ 6 _____________________
+
+	+ Cú pháp FOREIGN KEY
+C1: CREATE TABLE
+CREATE TABLE afiliations(
+professor_id INT REFERENCES professors (id)
+-> professor_id làm foreign key cho bảng afiliations và tham chiều đến bảng professors thông qua id
+
+
+C2: ALTER TABLE
+ALTER TABLE a 
+ADD CONSTRAINT a_fkey FOREIGN KEY (b_id) REFERENCES b (id);
+
+	// Ví dụ: Thêm khóa ngoại vào cột university_id trong các professors tham chiếu đến cột id trong universities. Đặt tên khóa ngoại này là professors_fkey:
+
+ALTER TABLE professors 
+ADD CONSTRAINT professors_fkey FOREIGN KEY (university_id) REFERENCES universities (id);
+
+
+	+ Để DROP CONSTRAIN:
+ALTER TABLE affiliations
+DROP CONSTRAINT affiliations_organization_id_fkey;
+
+_____________________ 7 _____________________
+
+- Nghiên cứu thêm code này:
+UPDATE affiliations
+SET professor_id = professors.id
+FROM professors
+WHERE affiliations.firstname = professors.firstname AND affiliations.lastname = professors.lastname;
+
+_____________________ 8 _____________________
+
+- Tính toàn vẹn tham chiếu: Một bản ghi tham chiếu đến một bản ghi khác trong một bảng khác phải luôn tham chiếu đến một bản ghi hiện có
+
+- Nói cách khác: Một bản ghi trong bảng A không thể trỏ đến một bản ghi trong bảng B không tồn tại
+
+_____________________ 9 _____________________
+
+- Xử lý vi phạm:
+CREATE TABLE a (
+	id integer PRIMARY KEY,
+	column_a varchar(64),
+	  ..., 
+	b_id integer REFERENCES b (id) ON DELETE NO ACTION
+);
+
+CREATE TABLE a (
+	id integerPRIMARY KEY,
+	column_a varchar(64),
+	  ..., 
+	b_id integer REFERENCES b (id) ON DELETE CASCADE
+);
+
+
+ON DELETE...
+...NO ACTION: Đưa ra lỗi
+...CASCADE: Xóa tất cả các bản ghi tham chiếu
+...RESTRICT: Đưa ra lỗi
+...SET NULL: Đặt cột tham chiếu thành NULL
+...SET DEFAULT: Đặt cột tham chiếu về giá trị mặc định của nó
+
+_____________________ 10 _____________________
+
+// Ví dụ:
+-- Identify the correct constraint name
+SELECT constraint_name, table_name, constraint_type
+FROM information_schema.table_constraints
+WHERE constraint_type = 'FOREIGN KEY';
+
+-- Drop the right foreign key constraint
+ALTER TABLE affiliations
+DROP CONSTRAINT affiliations_organization_id_fkey;
+
+-- Add a new foreign key constraint from affiliations to organizations which cascades deletion
+ALTER TABLE affiliations
+ADD CONSTRAINT affiliations_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES organizations (id) ON DELETE CASCADE;
+
+_____________________ End _____________________
